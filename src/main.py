@@ -21,8 +21,21 @@ def talker():
 
 
 class RosAssistant(object):
-    def __init__(self):
-        pass
+    def __init__(self, language_code, device_model_id, device_id, conversation_stream, display):
+        self.language_code = language_code
+        self.device_model_id = device_model_id
+        self.device_id = device_id
+        self.conversation_stream = conversation_stream
+        self.display = display
+
+        self.conversation_state = None
+        # Force reset of first conversation.
+        self.is_new_conversation = True
+
+        self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(
+            channel
+        )
+        self.deadline = deadline_sec
 
     def __enter__(self):
         return self
@@ -30,6 +43,14 @@ class RosAssistant(object):
     def __exit__(self, etype, e, traceback):
         if e:
             return False
+        self.conversation_stream.close()
+
+    def is_grpc_error_unavailable(e):
+        is_grpc_error = isinstance(e, grpc.RpcError)
+        if is_grpc_error and (e.code() == grpc.StatusCode.UNAVAILABLE):
+            logging.error('grpc unavailable error: %s', e)
+            return True
+        return False
 
 
 
