@@ -146,8 +146,8 @@ class RosAssistant(object):
 
 
 if __name__ == '__main__':
-    String project_id = "turtlebot-ai-speaker"
-    String device_id = "857479425415-t8g3j7stvdl27vddgl8goj21e97foa8e.apps.googleusercontent.com"
+    project_id = "turtlebot-ai-speaker"
+    device_id = "857479425415-t8g3j7stvdl27vddgl8goj21e97foa8e.apps.googleusercontent.com"
 
     try:
         with open(credentials, 'r') as f:
