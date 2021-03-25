@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>google_assistant_pkg</name>
+  <name>google_assistant_ros</name>
   <version>0.0.0</version>
-  <description>The google_assistant_pkg package</description>
+  <description>The google_assistant_ros package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

@@ -1,12 +1,32 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+
 # reference : https://github.com/googlesamples/assistant-sdk-python/blob/master/google-assistant-sdk/googlesamples/assistant/grpc/pushtotalk.py
 
 import rospy
 from std_msgs.msg import String
+
+import json
+import logging
+import uuid
+import sys
+import time
+import os
+import os.path
+import pathlib2 as pathlib
+import click
+
 import grpc
 import google.auth.transport.grpc
 import google.auth.transport.requests
 import google.oauth2.credentials
+
+
+from google.assistant.embedded.v1alpha2 import(
+    embedded_assistant_pb2,
+    embedded_assistant_pb2_grpc
+)
+from tenacity import retry, stop_after_attempt, retry_if_exception
+
 
 def talker():
     pub = rospy.Publisher("chatter", String, queue_size=5)
@@ -65,39 +85,6 @@ class RosAssistant(object):
                 yield c
             logging.debug('Reached end of AssistRequest iteration')
 
-    
-    def gen_assist_request(self):
-        """Yields: AssistRequest messages to send to the API."""
-
-        config = embedded_assistant_pb2.AssistConfig(
-            audio_in_config=embedded_assistant_pb2.AudioInConfig(
-                encoding='LINEAR16',
-                sample_rate_hertz=self.conversation_stream.sample_rate,
-            ),
-            audio_out_config=embedded_assistant_pb2.AudioOutConfig(
-                encoding='LINEAR16',
-                sample_rate_hertz=self.conversation_stream.sample_rate,
-                volume_percentage=self.conversation_stream.volume_percentage,
-            ),
-            dialog_state_in=embedded_assistant_pb2.DialogStateIn(
-                language_code=self.language_code,
-                conversation_state=self.conversation_state,
-                is_new_conversation=self.is_new_conversation,
-            ),
-            device_config=embedded_assistant_pb2.DeviceConfig(
-                device_id=self.device_id,
-                device_model_id=self.device_model_id,
-            )
-        )
-
-        self.is_new_conversation = False
-        # The first AssistRequest must contain the AssistConfig
-        # and no audio data.
-        yield embedded_assistant_pb2.AssistRequest(config=config)
-        for data in self.conversation_stream:
-            # Subsequent requests need audio data, but not config.
-            yield embedded_assistant_pb2.AssistRequest(audio_in=data)
-    
         for resp in self.assistant.Assist(iter_log_assist_requests(),
                                           self.deadline):
             assistant_helpers.log_assist_response_without_audio(resp)
@@ -144,11 +131,45 @@ class RosAssistant(object):
         self.conversation_stream.stop_playback()
         return continue_conversation
 
+        
+    def gen_assist_request(self):
+        """Yields: AssistRequest messages to send to the API."""
+
+        config = embedded_assistant_pb2.AssistConfig(
+            audio_in_config=embedded_assistant_pb2.AudioInConfig(
+                encoding='LINEAR16',
+                sample_rate_hertz=self.conversation_stream.sample_rate,
+            ),
+            audio_out_config=embedded_assistant_pb2.AudioOutConfig(
+                encoding='LINEAR16',
+                sample_rate_hertz=self.conversation_stream.sample_rate,
+                volume_percentage=self.conversation_stream.volume_percentage,
+            ),
+            dialog_state_in=embedded_assistant_pb2.DialogStateIn(
+                language_code=self.language_code,
+                conversation_state=self.conversation_state,
+                is_new_conversation=self.is_new_conversation,
+            ),
+            device_config=embedded_assistant_pb2.DeviceConfig(
+                device_id=self.device_id,
+                device_model_id=self.device_model_id,
+            )
+        )
+
+        self.is_new_conversation = False
+        # The first AssistRequest must contain the AssistConfig
+        # and no audio data.
+        yield embedded_assistant_pb2.AssistRequest(config=config)
+        for data in self.conversation_stream:
+            # Subsequent requests need audio data, but not config.
+            yield embedded_assistant_pb2.AssistRequest(audio_in=data)
+    
 
 if __name__ == '__main__':
     project_id = "turtlebot-ai-speaker"
-    device_id = "857479425415-t8g3j7stvdl27vddgl8goj21e97foa8e.apps.googleusercontent.com"
-
+    device_id = "turtlebot-ai-speaker-raspi_103-33luii"
+    credentials = os.path.join(click.get_app_dir('google-oauthlib-tool'), 'credentials.json')
+    
     try:
         with open(credentials, 'r') as f:
             credentials = google.oauth2.credentials.Credentials(token=None,
@@ -197,6 +218,7 @@ if __name__ == '__main__':
 
     ros_assistant = RosAssistant(device_model_id, device_id, conversation_stream)
 
+    
     pub = rospy.Publisher("chatter", String, queue_size=5)
     rospy.init_node('talker', anonymous=True)
     rate = rospy.Rate(10)
