@@ -7,14 +7,15 @@ from std_msgs.msg import String
 
 import json
 import logging
+
 import uuid
 import sys
 import time
 import os
 import os.path
 import pathlib2 as pathlib
-import click
 
+import click
 import grpc
 import google.auth.transport.grpc
 import google.auth.transport.requests
@@ -28,6 +29,23 @@ from google.assistant.embedded.v1alpha2 import(
 from tenacity import retry, stop_after_attempt, retry_if_exception
 
 
+try:
+    from . import (
+        assistant_helpers,
+        audio_helpers,
+        browser_helpers,
+        device_helpers
+    )
+except (SystemError, ImportError):
+    import assistant_helpers
+    import audio_helpers
+    import browser_helpers
+    import device_helpers
+            
+
+
+
+
 def talker():
     pub = rospy.Publisher("chatter", String, queue_size=5)
     rospy.init_node('talker', anonymous=True)
@@ -37,6 +55,26 @@ def talker():
         rospy.loginfo(hello_str)
         pub.publish(hello_str)
         rate.sleep()
+
+
+
+ASSISTANT_API_ENDPOINT = "embeddedassistant.googleapi.com"
+END_OF_UTTERANCE = embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE
+DIALOG_FOLLOW_ON = embedded_assistant_pb2.DialogStateOut.DIALOG_FOLLOW_ON
+CLOSE_MICROPHONE = embedded_assistant_pb2.DialogStateOut.CLOSE_MICROPHONE
+PLAYING = embedded_assistant_pb2.ScreenOutConfig.PLAYING
+DEFAULT_GRPC_DEADLINE = 60 *3 + 5
+
+
+audio_sample_rate  = audio_helpers.DEFAULT_AUDIO_SAMPLE_RATE
+audio_sample_width = audio_helpers.DEFAULT_AUDIO_SAMPLE_WIDTH
+audio_iter_size    = audio_helpers.DEFAULT_AUDIO_ITER_SIZE
+audio_block_size   = audio_helpers.DEFAULT_AUDIO_DEVICE_BLOCK_SIZE
+audio_flush_size   = audio_helpers.DEFAULT_AUDIO_DEVICE_FLUSH_SIZE
+
+
+
+
 
 
 
@@ -182,7 +220,9 @@ if __name__ == '__main__':
                       'new OAuth 2.0 credentials.')
         sys.exit(-1)
 
-        # Create an authorized gRPC channel.
+
+    api_endpoint = ASSISTANT_API_ENDPOINT
+    # Create an authorized gRPC channel.
     grpc_channel = google.auth.transport.grpc.secure_authorized_channel(
         credentials, http_request, api_endpoint)
     logging.info('Connecting to %s', api_endpoint)
