@@ -29,8 +29,13 @@ from google.assistant.embedded.v1alpha2 import(
 from tenacity import retry, stop_after_attempt, retry_if_exception
 
 
+
+package_dir = os.path.dirname(os.path.abspath(__file__))
+print(package_dir)
+
+
 try:
-    from . import (
+    from package_dir import (
         assistant_helpers,
         audio_helpers,
         browser_helpers,
@@ -229,6 +234,7 @@ if __name__ == '__main__':
 
     # Configure audio source and sink.
 
+    audio_device = None
     audio_source = audio_device = (
             audio_device or audio_helpers.SoundDeviceStream(
                 sample_rate=audio_sample_rate,
@@ -246,13 +252,28 @@ if __name__ == '__main__':
                 flush_size=audio_flush_size
             )
         )
-    # Create conversation stream with the given audio source and sink.
+        # Create conversation stream with the given audio source and sink.
     conversation_stream = audio_helpers.ConversationStream(
         source=audio_source,
         sink=audio_sink,
         iter_size=audio_iter_size,
         sample_width=audio_sample_width,
     )
+
+    device_config = os.path.join(click.get_app_dir('googlesamples-assistant'), 'device_config.json')
+
+
+    try:
+        with open(device_config) as f:
+            device = json.load(f)
+            device_id = device['id']
+            device_model_id = device['model_id']
+            logging.info("Using device model %s and device id %s", device_model_id, device_id)
+    except Exception as e:
+        logging.warning("Device config not found : %s" %e)
+        logging.info('Registering device')
+        if not device_model_id:
+            logging.error("Option --device-model-id required" "When registering a device instance")
 
     device_handler = device_helpers.DeviceRequestHandler(device_id)
 
