@@ -2,8 +2,8 @@
 
 # reference : https://github.com/googlesamples/assistant-sdk-python/blob/master/google-assistant-sdk/googlesamples/assistant/grpc/pushtotalk.py
 
-import rospy
-from std_msgs.msg import String
+#import rospy
+#from std_msgs.msg import String
 
 import json
 import logging
@@ -50,7 +50,7 @@ except (SystemError, ImportError):
 
 
 
-
+"""
 def talker():
     pub = rospy.Publisher("chatter", String, queue_size=5)
     rospy.init_node('talker', anonymous=True)
@@ -60,7 +60,7 @@ def talker():
         rospy.loginfo(hello_str)
         pub.publish(hello_str)
         rate.sleep()
-
+"""
 
 
 ASSISTANT_API_ENDPOINT = "embeddedassistant.googleapi.com"
@@ -84,8 +84,8 @@ audio_flush_size   = audio_helpers.DEFAULT_AUDIO_DEVICE_FLUSH_SIZE
 
 
 class RosAssistant(object):
-    def __init__(self, language_code, device_model_id, device_id, conversation_stream):
-        self.language_code = language_code
+    def __init__(self, device_model_id, device_id, channel, conversation_stream):
+        self.language_code = 'ko-KR'
         self.device_model_id = device_model_id
         self.device_id = device_id
         self.conversation_stream = conversation_stream
@@ -97,7 +97,7 @@ class RosAssistant(object):
         self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(
             channel
         )
-        self.deadline = deadline_sec
+        self.deadline = DEFAULT_GRPC_DEADLINE #if you want to change dealine time, pls change it
 
     def __enter__(self):
         return self
@@ -277,18 +277,21 @@ if __name__ == '__main__':
 
     device_handler = device_helpers.DeviceRequestHandler(device_id)
 
-    ros_assistant = RosAssistant(device_model_id, device_id, conversation_stream)
+    ros_assistant = RosAssistant(device_model_id, device_id, grpc_channel, conversation_stream)
 
     
-    pub = rospy.Publisher("chatter", String, queue_size=5)
-    rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(10)
-    while not rospy.is_shutdown():
-        hello_str = "hello world %s" % rospy.get_time()
-        rospy.loginfo(hello_str)
-        pub.publish(hello_str)
+    #pub = rospy.Publisher("chatter", String, queue_size=5)
+    #rospy.init_node('talker', anonymous=True)
+    #rate = rospy.Rate(10)
+    #while not rospy.is_shutdown():
+    while True:
+        #hello_str = "hello world %s" % rospy.get_time()
+        #rospy.loginfo(hello_str)
+        #pub.publish(hello_str)
 
+        a = input()
         continue_conversation = assistant.assist()
+        if a == 'q':
+            break
 
-
-        rate.sleep()
+        #rate.sleep()
