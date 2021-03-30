@@ -33,9 +33,8 @@ from tenacity import retry, stop_after_attempt, retry_if_exception
 package_dir = os.path.dirname(os.path.abspath(__file__))
 print(package_dir)
 
-
 try:
-    from package_dir import (
+    from . import (
         assistant_helpers,
         audio_helpers,
         browser_helpers,
@@ -46,9 +45,12 @@ except (SystemError, ImportError):
     import audio_helpers
     import browser_helpers
     import device_helpers
-            
-
-
+"""         
+import assistant_helpers
+import audio_helpers
+import browser_helpers
+import device_helpers
+"""   
 
 """
 def talker():
@@ -122,7 +124,7 @@ class RosAssistant(object):
         self.conversation_stream.start_recording()
         logging.info('Recording audio request')
 
-        def iter_log_assist_requests():
+        def iter_log_assist_requests(): #debugging
             for c in self.gen_assist_request():
                 assistant_helpers.iter_log_assist_request_without_audio(c)
                 yield c
@@ -284,14 +286,19 @@ if __name__ == '__main__':
     #rospy.init_node('talker', anonymous=True)
     #rate = rospy.Rate(10)
     #while not rospy.is_shutdown():
+    once = False
+    wait_for_user_trigger = once
     while True:
         #hello_str = "hello world %s" % rospy.get_time()
         #rospy.loginfo(hello_str)
         #pub.publish(hello_str)
 
-        a = input()
-        continue_conversation = assistant.assist()
-        if a == 'q':
-            break
+        if wait_for_user_trigger:
+                click.pause(info='Press Enter to send a new request...')
+        continue_conversation = ros_assistant.assist()
+
+
+        if once and (not continue_conversation):
+                break
 
         #rate.sleep()
