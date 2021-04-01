@@ -34,7 +34,7 @@ package_dir = os.path.dirname(os.path.abspath(__file__))
 print(package_dir)
 
 try:
-    from . import (
+    from package_dir import (
         assistant_helpers,
         audio_helpers,
         browser_helpers,
@@ -86,7 +86,7 @@ audio_flush_size   = audio_helpers.DEFAULT_AUDIO_DEVICE_FLUSH_SIZE
 
 
 class RosAssistant(object):
-    def __init__(self, device_model_id, device_id, channel, conversation_stream):
+    def __init__(self, device_model_id, device_id, credentials, conversation_stream):
         self.language_code = 'ko-KR'
         self.device_model_id = device_model_id
         self.device_id = device_id
@@ -94,12 +94,23 @@ class RosAssistant(object):
 
         self.conversation_state = None
         # Force reset of first conversation.
-        self.is_new_conversation = True
-
-        self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(
-            channel
-        )
+        self.is_new_conversation = True        
         self.deadline = DEFAULT_GRPC_DEADLINE #if you want to change dealine time, pls change it
+        
+        print("[class] credentails : ", credentials)
+
+        self.make_grpc_channel(credentials)
+        self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(
+            self.grpc_channel
+        )
+
+        print("[KKR] assistant", self.assistant)
+        self.deadline = DEFAULT_GRPC_DEADLINE
+        self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
+
+
+        # Create an authorized gRPC channel.
+        
 
     def __enter__(self):
         return self
@@ -108,6 +119,26 @@ class RosAssistant(object):
         if e:
             return False
         self.conversation_stream.close()
+
+    def make_grpc_channel(self, credentials):
+        try:
+            with open(credentials, 'r') as f:
+                self.credentials = google.oauth2.credentials.Credentials(token=None,
+                                                                    **json.load(f))
+                self.http_request = google.auth.transport.requests.Request()
+                self.credentials.refresh(self.http_request)
+        except Exception as e:
+            logging.error('Error loading credentials: %s', e)
+            logging.error('Run google-oauthlib-tool to initialize '
+                        'new OAuth 2.0 credentials.')
+            sys.exit(-1)
+        api_endpoint = ASSISTANT_API_ENDPOINT
+        # Create an authorized gRPC channel.
+        self.grpc_channel = google.auth.transport.grpc.secure_authorized_channel(
+            self.credentials, self.http_request, api_endpoint)
+        logging.info('[KKR] Connecting to %s', api_endpoint)
+
+
 
     def is_grpc_error_unavailable(e):
         is_grpc_error = isinstance(e, grpc.RpcError)
@@ -126,7 +157,7 @@ class RosAssistant(object):
 
         def iter_log_assist_requests(): #debugging
             for c in self.gen_assist_request():
-                assistant_helpers.iter_log_assist_request_without_audio(c)
+                assistant_helpers.log_assist_request_without_audio(c)
                 yield c
             logging.debug('Reached end of AssistRequest iteration')
 
@@ -214,25 +245,9 @@ if __name__ == '__main__':
     project_id = "turtlebot-ai-speaker"
     device_id = "turtlebot-ai-speaker-raspi_103-33luii"
     credentials = os.path.join(click.get_app_dir('google-oauthlib-tool'), 'credentials.json')
+    print("[main] - credentials : ", credentials)
+
     
-    try:
-        with open(credentials, 'r') as f:
-            credentials = google.oauth2.credentials.Credentials(token=None,
-                                                                **json.load(f))
-            http_request = google.auth.transport.requests.Request()
-            credentials.refresh(http_request)
-    except Exception as e:
-        logging.error('Error loading credentials: %s', e)
-        logging.error('Run google-oauthlib-tool to initialize '
-                      'new OAuth 2.0 credentials.')
-        sys.exit(-1)
-
-
-    api_endpoint = ASSISTANT_API_ENDPOINT
-    # Create an authorized gRPC channel.
-    grpc_channel = google.auth.transport.grpc.secure_authorized_channel(
-        credentials, http_request, api_endpoint)
-    logging.info('Connecting to %s', api_endpoint)
 
     # Configure audio source and sink.
 
@@ -264,34 +279,35 @@ if __name__ == '__main__':
 
     device_config = os.path.join(click.get_app_dir('googlesamples-assistant'), 'device_config.json')
 
-
-    try:
-        with open(device_config) as f:
-            device = json.load(f)
-            device_id = device['id']
-            device_model_id = device['model_id']
-            logging.info("Using device model %s and device id %s", device_model_id, device_id)
-    except Exception as e:
-        logging.warning("Device config not found : %s" %e)
-        logging.info('Registering device')
-        if not device_model_id:
-            logging.error("Option --device-model-id required" "When registering a device instance")
-
-    device_handler = device_helpers.DeviceRequestHandler(device_id)
-
-    ros_assistant = RosAssistant(device_model_id, device_id, grpc_channel, conversation_stream)
-
+    device_model_id = []
+    if not device_id or not device_model_id:
+        try:
+            with open(device_config) as f:
+                device = json.load(f)
+                device_id = device['id']
+                device_model_id = device['model_id']
+                print("Using device model %s and device id %s", device_model_id, device_id)
+        except Exception as e:
+            logging.warning("Device config not found : %s" %e)
+            logging.info('Registering device')
+            if not device_model_id:
+                logging.error("Option --device-model-id required" "When registering a device instance")
     
+    #self, device_model_id, device_id, credentials,  conversation_stream
+    ros_assistant = RosAssistant(device_model_id, device_id, credentials, conversation_stream)
+
+
     #pub = rospy.Publisher("chatter", String, queue_size=5)
     #rospy.init_node('talker', anonymous=True)
     #rate = rospy.Rate(10)
     #while not rospy.is_shutdown():
     once = False
-    wait_for_user_trigger = once
+    wait_for_user_trigger = not once
     while True:
         #hello_str = "hello world %s" % rospy.get_time()
         #rospy.loginfo(hello_str)
         #pub.publish(hello_str)
+        print("test")
 
         if wait_for_user_trigger:
                 click.pause(info='Press Enter to send a new request...')
