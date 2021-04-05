@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # reference : https://github.com/googlesamples/assistant-sdk-python/blob/master/google-assistant-sdk/googlesamples/assistant/grpc/pushtotalk.py
 
@@ -65,7 +65,7 @@ def talker():
 """
 
 
-ASSISTANT_API_ENDPOINT = "embeddedassistant.googleapi.com"
+ASSISTANT_API_ENDPOINT = 'embeddedassistant.googleapis.com'
 END_OF_UTTERANCE = embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE
 DIALOG_FOLLOW_ON = embedded_assistant_pb2.DialogStateOut.DIALOG_FOLLOW_ON
 CLOSE_MICROPHONE = embedded_assistant_pb2.DialogStateOut.CLOSE_MICROPHONE
@@ -75,6 +75,7 @@ DEFAULT_GRPC_DEADLINE = 60 *3 + 5
 
 audio_sample_rate  = audio_helpers.DEFAULT_AUDIO_SAMPLE_RATE
 audio_sample_width = audio_helpers.DEFAULT_AUDIO_SAMPLE_WIDTH
+
 audio_iter_size    = audio_helpers.DEFAULT_AUDIO_ITER_SIZE
 audio_block_size   = audio_helpers.DEFAULT_AUDIO_DEVICE_BLOCK_SIZE
 audio_flush_size   = audio_helpers.DEFAULT_AUDIO_DEVICE_FLUSH_SIZE
@@ -123,6 +124,7 @@ class RosAssistant(object):
     def make_grpc_channel(self, credentials):
         try:
             with open(credentials, 'r') as f:
+                print("[KKR]make grpc channel")
                 self.credentials = google.oauth2.credentials.Credentials(token=None,
                                                                     **json.load(f))
                 self.http_request = google.auth.transport.requests.Request()
@@ -147,13 +149,13 @@ class RosAssistant(object):
             return True
         return False
 
-    @retry(reraise= True, stop=stop_after_attempt(3), retry=retry_if_exception(is_grpc_error_unavailable))
+    @retry(reraise= True, stop=stop_after_attempt(1), retry=retry_if_exception(is_grpc_error_unavailable))
     def assist(self):
         continue_conversation = False
         device_actions_futures = []
 
         self.conversation_stream.start_recording()
-        logging.info('Recording audio request')
+        print('Recording audio request')
 
         def iter_log_assist_requests(): #debugging
             for c in self.gen_assist_request():
@@ -309,12 +311,12 @@ if __name__ == '__main__':
         #pub.publish(hello_str)
         print("test")
 
-        if wait_for_user_trigger:
-                click.pause(info='Press Enter to send a new request...')
+        #if wait_for_user_trigger:
+        #        click.pause(info='Press Enter to send a new request...')
         continue_conversation = ros_assistant.assist()
 
 
-        if once and (not continue_conversation):
-                break
+        #if once and (not continue_conversation):
+        #        break
 
         #rate.sleep()
