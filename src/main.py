@@ -2,8 +2,8 @@
 
 # reference : https://github.com/googlesamples/assistant-sdk-python/blob/master/google-assistant-sdk/googlesamples/assistant/grpc/pushtotalk.py
 
-#import rospy
-#from std_msgs.msg import String
+import rospy
+from std_msgs.msg import String
 
 import json
 import logging
@@ -45,12 +45,7 @@ except (SystemError, ImportError):
     import audio_helpers
     import browser_helpers
     import device_helpers
-"""         
-import assistant_helpers
-import audio_helpers
-import browser_helpers
-import device_helpers
-"""   
+
 
 """
 def talker():
@@ -309,7 +304,6 @@ if __name__ == '__main__':
         #hello_str = "hello world %s" % rospy.get_time()
         #rospy.loginfo(hello_str)
         #pub.publish(hello_str)
-        print("test")
 
         #if wait_for_user_trigger:
         #        click.pause(info='Press Enter to send a new request...')
