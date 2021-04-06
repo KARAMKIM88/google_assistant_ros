@@ -239,8 +239,16 @@ class RosAssistant(object):
     
 
 if __name__ == '__main__':
-    project_id = "turtlebot-ai-speaker"
-    device_id = "turtlebot-ai-speaker-raspi_103-33luii"
+
+    rospy.init_node('google_assistant_ros', anonymous=True)
+
+
+    project_id = rospy.get_param("~/project_id")
+    device_id = rospy.get_param("~/device_id")
+
+    print("[KKR] project id : ", project_id)
+    print("[KKR] device id : ", device_id)
+
     credentials = os.path.join(click.get_app_dir('google-oauthlib-tool'), 'credentials.json')
     print("[main] - credentials : ", credentials)
 
@@ -294,16 +302,17 @@ if __name__ == '__main__':
     ros_assistant = RosAssistant(device_model_id, device_id, credentials, conversation_stream)
 
 
-    #pub = rospy.Publisher("chatter", String, queue_size=5)
-    #rospy.init_node('talker', anonymous=True)
-    #rate = rospy.Rate(10)
-    #while not rospy.is_shutdown():
+    pub = rospy.Publisher("chatter", String, queue_size=5)
+    
+    rate = rospy.Rate(10)
     once = False
     wait_for_user_trigger = not once
-    while True:
+    
+    
+    while not rospy.is_shutdown():
         #hello_str = "hello world %s" % rospy.get_time()
         #rospy.loginfo(hello_str)
-        #pub.publish(hello_str)
+        pub.publish(hello_str)
 
         #if wait_for_user_trigger:
         #        click.pause(info='Press Enter to send a new request...')

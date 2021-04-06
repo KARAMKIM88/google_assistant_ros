@@ -1,0 +1,11 @@
+Turtlebot3 Raspi
+1) Location : Office
+2) Model id : turtlebot-ai-speaker-raspi_103-33luii
+3) client file name : client_secret_turtlebot.json
+4) Project name : turtlebot-ai-speaker
+5) Verification command : 
+
+Home Raspi
+1) Location : Home
+2) Model id : turtlebot-ai-speaker-home_raspi-tyi2fv
+

@@ -1,0 +1,8 @@
+<launch>
+   <!-- Run master_discovery -->
+    <node pkg="google_assistant_ros" type="google_assistant_ros" name="google_assistant_ros"/>
+    <arg name="device_id" default = "turtlebot-ai-speaker-raspi_103-33luii"/>
+    <arg name="project_id" default = "turtlebot-ai-speaker" />
+    
+
+</launch>
