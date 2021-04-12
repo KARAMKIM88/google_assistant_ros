@@ -166,7 +166,7 @@ class RosAssistant(object):
                 logging.info('Stopping recording.')
                 self.conversation_stream.stop_recording()
             if resp.speech_results:
-                logging.info('Transcript of user request: "%s".',
+                print('Transcript of user request: "%s".',
                              ' '.join(r.transcript
                                       for r in resp.speech_results))
             if len(resp.audio_out.audio_data) > 0:
@@ -243,14 +243,19 @@ if __name__ == '__main__':
     rospy.init_node('google_assistant_ros', anonymous=True)
 
 
-    project_id = rospy.get_param("~/project_id")
-    device_id = rospy.get_param("~/device_id")
+    #project_id = rospy.get_param("/google_assistant_ros/device_id")
+    #device_id = rospy.get_param("/google_assistant_ros/project_id")
 
-    print("[KKR] project id : ", project_id)
-    print("[KKR] device id : ", device_id)
+    project_id = "turtlebot-ai-speaker"
+    device_id = "turtlebot-ai-speaker-home_pi4-3tsek8"
 
+    #rospy.loginfo("device model id : %s", device_model_id)
+    rospy.loginfo("[main] project id : %s" , project_id)
+    rospy.loginfo("[main] device id : %s", device_id)
+
+    rospy.loginfo("test test test test")
     credentials = os.path.join(click.get_app_dir('google-oauthlib-tool'), 'credentials.json')
-    print("[main] - credentials : ", credentials)
+    rospy.loginfo("[main] - credentials : %s", credentials)
 
     
 
@@ -291,7 +296,7 @@ if __name__ == '__main__':
                 device = json.load(f)
                 device_id = device['id']
                 device_model_id = device['model_id']
-                print("Using device model %s and device id %s", device_model_id, device_id)
+                rospy.loginfo("Using device model %s and device id %s", device_model_id, device_id)
         except Exception as e:
             logging.warning("Device config not found : %s" %e)
             logging.info('Registering device')
@@ -299,6 +304,7 @@ if __name__ == '__main__':
                 logging.error("Option --device-model-id required" "When registering a device instance")
     
     #self, device_model_id, device_id, credentials,  conversation_stream
+    rospy.loginfo("device model id : %s", device_model_id)
     ros_assistant = RosAssistant(device_model_id, device_id, credentials, conversation_stream)
 
 
@@ -310,16 +316,16 @@ if __name__ == '__main__':
     
     
     while not rospy.is_shutdown():
-        #hello_str = "hello world %s" % rospy.get_time()
+        hello_str = "hello world %s" % rospy.get_time()
         #rospy.loginfo(hello_str)
         pub.publish(hello_str)
 
-        #if wait_for_user_trigger:
-        #        click.pause(info='Press Enter to send a new request...')
-        continue_conversation = ros_assistant.assist()
+        if wait_for_user_trigger:
+            click.pause(info='Press Enter to send a new request...')
+            continue_conversation = ros_assistant.assist()
 
 
         #if once and (not continue_conversation):
         #        break
 
-        #rate.sleep()
+        rate.sleep()

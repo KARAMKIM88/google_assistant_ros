@@ -1,8 +1,8 @@
 <launch>
    <!-- Run master_discovery -->
-    <node pkg="google_assistant_ros" type="main.py" name="google_assistant_ros"/>
-    <arg name="device_id" default = "turtlebot-ai-speaker-raspi_103-33luii"/>
-    <arg name="project_id" default = "turtlebot-ai-speaker" />
-    
+    <node pkg="google_assistant_ros" type="main.py" name="google_assistant_ros">
+        <param name="device_id" type = "str" value = "turtlebot-ai-speaker-home_pi4-3tsek8"/>
+        <param name="project_id" type = "str" value = "turtlebot-ai-speaker" />
+    </node>
 
 </launch>
