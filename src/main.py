@@ -2,6 +2,8 @@
 
 # reference : https://github.com/googlesamples/assistant-sdk-python/blob/master/google-assistant-sdk/googlesamples/assistant/grpc/pushtotalk.py
 
+
+
 import rospy
 from std_msgs.msg import String
 
@@ -166,7 +168,8 @@ class RosAssistant(object):
                 logging.info('Stopping recording.')
                 self.conversation_stream.stop_recording()
             if resp.speech_results:
-                print('Transcript of user request: "%s".',
+                request_cmd = for r in resp.speech_results
+                logging.info('Transcript of user request: "%s".',
                              ' '.join(r.transcript
                                       for r in resp.speech_results))
             if len(resp.audio_out.audio_data) > 0:
@@ -304,7 +307,7 @@ if __name__ == '__main__':
                 logging.error("Option --device-model-id required" "When registering a device instance")
     
     #self, device_model_id, device_id, credentials,  conversation_stream
-    rospy.loginfo("device model id : %s", device_model_id)
+    #rospy.loginfo("device model id : %s", device_model_id)
     ros_assistant = RosAssistant(device_model_id, device_id, credentials, conversation_stream)
 
 
@@ -317,12 +320,11 @@ if __name__ == '__main__':
     
     while not rospy.is_shutdown():
         hello_str = "hello world %s" % rospy.get_time()
-        #rospy.loginfo(hello_str)
+        rospy.loginfo(hello_str)
         pub.publish(hello_str)
 
-        if wait_for_user_trigger:
-            click.pause(info='Press Enter to send a new request...')
-            continue_conversation = ros_assistant.assist()
+        
+        continue_conversation = ros_assistant.assist()
 
 
         #if once and (not continue_conversation):
