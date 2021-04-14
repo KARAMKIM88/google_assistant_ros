@@ -6,12 +6,17 @@
 
 import rospy
 from std_msgs.msg import String
+from geometry_msgs.msg import Twist
 
 import json
 import logging
 
 import uuid
 import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+
 import time
 import os
 import os.path
@@ -22,6 +27,8 @@ import grpc
 import google.auth.transport.grpc
 import google.auth.transport.requests
 import google.oauth2.credentials
+
+
 
 
 from google.assistant.embedded.v1alpha2 import(
@@ -160,6 +167,8 @@ class RosAssistant(object):
                 yield c
             logging.debug('Reached end of AssistRequest iteration')
 
+        request_cmd = ''
+
         for resp in self.assistant.Assist(iter_log_assist_requests(),
                                           self.deadline):
             assistant_helpers.log_assist_response_without_audio(resp)
@@ -168,16 +177,26 @@ class RosAssistant(object):
                 logging.info('Stopping recording.')
                 self.conversation_stream.stop_recording()
             if resp.speech_results:
-                request_cmd = for r in resp.speech_results
+                request_cmd = ''.join(r.transcript for r in resp.speech_results)
+                rospy.loginfo("[KKR] : %s", request_cmd)
+
                 logging.info('Transcript of user request: "%s".',
                              ' '.join(r.transcript
                                       for r in resp.speech_results))
-            if len(resp.audio_out.audio_data) > 0:
+            if len(resp.audio_out.audio_data) > 0:            
+
+                index = request_cmd.find("Ok Google")               
+                
                 if not self.conversation_stream.playing:
                     self.conversation_stream.stop_recording()
                     self.conversation_stream.start_playback()
-                    logging.info('Playing assistant response.')
-                self.conversation_stream.write(resp.audio_out.audio_data)
+                    rospy.loginfo('Playing assistant response.')
+
+                if index > -1 :
+                    self.conversation_stream.write(resp.audio_out.audio_data)
+                else :
+                    rospy.loginfo("[KKR] : %s", request_cmd)
+
             if resp.dialog_state_out.conversation_state:
                 conversation_state = resp.dialog_state_out.conversation_state
                 logging.debug('Updating conversation state.')
@@ -205,7 +224,7 @@ class RosAssistant(object):
 
         logging.info('Finished playing assistant response.')
         self.conversation_stream.stop_playback()
-        return continue_conversation
+        return continue_conversation, request_cmd
 
         
     def gen_assist_request(self):
@@ -324,7 +343,7 @@ if __name__ == '__main__':
         pub.publish(hello_str)
 
         
-        continue_conversation = ros_assistant.assist()
+        continue_conversation, request_cmd = ros_assistant.assist()
 
 
         #if once and (not continue_conversation):
