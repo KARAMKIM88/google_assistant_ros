@@ -97,6 +97,10 @@ class RosAssistant(object):
         self.device_id = device_id
         self.conversation_stream = conversation_stream
 
+        self.pub_move = rospy.Publisher("/cmd_vel",Twist,queue_size=1)
+        self.stop = Twist(0, 0, 0, 0, 0, 0)
+        
+
         self.conversation_state = None
         # Force reset of first conversation.
         self.is_new_conversation = True        
@@ -194,6 +198,7 @@ class RosAssistant(object):
 
                 if index > -1 :
                     self.conversation_stream.write(resp.audio_out.audio_data)
+                    self.pub_move.publish(self.stop)
                 else :
                     rospy.loginfo("[KKR] : %s", request_cmd)
 
