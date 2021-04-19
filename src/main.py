@@ -97,8 +97,8 @@ class RosAssistant(object):
         self.device_id = device_id
         self.conversation_stream = conversation_stream
 
-        self.pub_move = rospy.Publisher("/cmd_vel",Twist,queue_size=1)
-        self.stop = Twist(0, 0, 0, 0, 0, 0)
+        self.pub_move = rospy.Publisher("/GA",String,queue_size=1)
+        #self.stop = Twist(0, 0, 0, 0, 0, 0)
         
 
         self.conversation_state = None
@@ -196,11 +196,12 @@ class RosAssistant(object):
                     self.conversation_stream.start_playback()
                     rospy.loginfo('Playing assistant response.')
 
-                if index > -1 :
-                    self.conversation_stream.write(resp.audio_out.audio_data)
-                    self.pub_move.publish(self.stop)
-                else :
-                    rospy.loginfo("[KKR] : %s", request_cmd)
+                #if index > -1 :
+                self.conversation_stream.write(resp.audio_out.audio_data)
+                self.pub_move.publish("GA Request")
+                    #self.pub_move.publish(self.stop)
+                #else :
+                #    rospy.loginfo("[KKR] : %s", request_cmd)
 
             if resp.dialog_state_out.conversation_state:
                 conversation_state = resp.dialog_state_out.conversation_state
