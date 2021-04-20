@@ -97,7 +97,7 @@ class RosAssistant(object):
         self.device_id = device_id
         self.conversation_stream = conversation_stream
 
-        self.pub_move = rospy.Publisher("/GA",String,queue_size=1)
+        self.pub_move = rospy.Publisher("/GA",String,queue_size=10)
         #self.stop = Twist(0, 0, 0, 0, 0, 0)
         
 
@@ -336,7 +336,7 @@ if __name__ == '__main__':
     ros_assistant = RosAssistant(device_model_id, device_id, credentials, conversation_stream)
 
 
-    pub = rospy.Publisher("chatter", String, queue_size=5)
+    pub = rospy.Publisher("GA", String, queue_size=5)
     
     rate = rospy.Rate(10)
     once = False
