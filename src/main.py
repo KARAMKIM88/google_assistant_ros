@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# -*- coding: utf-8 -*-
 # reference : https://github.com/googlesamples/assistant-sdk-python/blob/master/google-assistant-sdk/googlesamples/assistant/grpc/pushtotalk.py
 
 
@@ -179,6 +179,7 @@ class RosAssistant(object):
             if resp.event_type == END_OF_UTTERANCE:
                 logging.info('End of audio request detected.')
                 logging.info('Stopping recording.')
+
                 self.conversation_stream.stop_recording()
             if resp.speech_results:
                 request_cmd = ''.join(r.transcript for r in resp.speech_results)
@@ -189,19 +190,19 @@ class RosAssistant(object):
                                       for r in resp.speech_results))
             if len(resp.audio_out.audio_data) > 0:            
 
-                index = request_cmd.find("Ok Google")               
+                index = request_cmd.find('번으로 가세요')               
                 
                 if not self.conversation_stream.playing:
                     self.conversation_stream.stop_recording()
-                    self.conversation_stream.start_playback()
-                    rospy.loginfo('Playing assistant response.')
-
-                #if index > -1 :
-                self.conversation_stream.write(resp.audio_out.audio_data)
-                self.pub_move.publish("GA Request")
-                    #self.pub_move.publish(self.stop)
-                #else :
-                #    rospy.loginfo("[KKR] : %s", request_cmd)
+                    self.conversation_stream.start_playback()              
+                
+                if index > -1 :
+                   self.pub_move.publish("GA Request : MOVE to " + request_cmd[index - 1])
+                   
+                else :
+                    self.pub_move.publish("GA Request")
+                    self.conversation_stream.write(resp.audio_out.audio_data)
+                
 
             if resp.dialog_state_out.conversation_state:
                 conversation_state = resp.dialog_state_out.conversation_state
@@ -337,22 +338,14 @@ if __name__ == '__main__':
 
 
     pub = rospy.Publisher("GA", String, queue_size=5)
-    
-    rate = rospy.Rate(10)
-    once = False
-    wait_for_user_trigger = not once
-    
+       
     
     while not rospy.is_shutdown():
-        hello_str = "hello world %s" % rospy.get_time()
-        rospy.loginfo(hello_str)
-        pub.publish(hello_str)
-
-        
+                
         continue_conversation, request_cmd = ros_assistant.assist()
 
 
         #if once and (not continue_conversation):
         #        break
+        #rospy.spin()
 
-        rate.sleep()
