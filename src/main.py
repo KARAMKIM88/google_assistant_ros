@@ -216,7 +216,7 @@ class RosAssistant(object):
                    self.pub_move.publish(request_cmd[index - 1])
                    
                 else :
-                    self.pub_move.publish("GA Request")
+                    self.pub_move.publish("GA Request : %s ")
                     self.conversation_stream.write(resp.audio_out.audio_data)
                 
 
