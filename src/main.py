@@ -116,6 +116,8 @@ class RosAssistant(object):
         print("[KKR] assistant", self.assistant)
         self.deadline = DEFAULT_GRPC_DEADLINE
         self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
+        self.wakeup_word = "Ok Google"
+        self.request_cmd = ""
 
 
         # Create an authorized gRPC channel.
@@ -157,6 +159,15 @@ class RosAssistant(object):
             return True
         return False
 
+    def check_wakeup_word(request_cmd):
+        index = self.request_cmd.find(self.wakeup_word)
+        if index > -1 :
+            return True
+        else
+            return False
+
+
+
     @retry(reraise= True, stop=stop_after_attempt(1), retry=retry_if_exception(is_grpc_error_unavailable))
     def assist(self):
         continue_conversation = False
@@ -171,7 +182,7 @@ class RosAssistant(object):
                 yield c
             logging.debug('Reached end of AssistRequest iteration')
 
-        request_cmd = ''
+        self.request_cmd = ''
 
         for resp in self.assistant.Assist(iter_log_assist_requests(),
                                           self.deadline):
@@ -190,14 +201,19 @@ class RosAssistant(object):
                                       for r in resp.speech_results))
             if len(resp.audio_out.audio_data) > 0:            
 
-                index = request_cmd.find('번으로 가세요')               
+                
+                valid = check_wakeup_word(self.request_cmd)
+                if valid :
+                    index = request_cmd.find('로 가')
+                else :
+                    continue               
                 
                 if not self.conversation_stream.playing:
                     self.conversation_stream.stop_recording()
                     self.conversation_stream.start_playback()              
                 
                 if index > -1 :
-                   self.pub_move.publish("GA Request : MOVE to " + request_cmd[index - 1])
+                   self.pub_move.publish(request_cmd[index - 1])
                    
                 else :
                     self.pub_move.publish("GA Request")
