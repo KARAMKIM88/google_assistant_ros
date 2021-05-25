@@ -117,8 +117,7 @@ class RosAssistant(object):
         self.deadline = DEFAULT_GRPC_DEADLINE
         self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
         self.wakeup_word = "Ok Google"
-        self.request_cmd = ""
-
+        
 
         # Create an authorized gRPC channel.
         
@@ -159,11 +158,11 @@ class RosAssistant(object):
             return True
         return False
 
-    def check_wakeup_word(request_cmd):
-        index = self.request_cmd.find(self.wakeup_word)
+    def check_wakeup_word(self, request_cmd):
+        index = request_cmd.find(self.wakeup_word)
         if index > -1 :
             return True
-        else
+        else:
             return False
 
 
@@ -182,7 +181,7 @@ class RosAssistant(object):
                 yield c
             logging.debug('Reached end of AssistRequest iteration')
 
-        self.request_cmd = ''
+        request_cmd = ''
 
         for resp in self.assistant.Assist(iter_log_assist_requests(),
                                           self.deadline):
@@ -199,25 +198,35 @@ class RosAssistant(object):
                 logging.info('Transcript of user request: "%s".',
                              ' '.join(r.transcript
                                       for r in resp.speech_results))
-            if len(resp.audio_out.audio_data) > 0:            
-
+            if len(resp.audio_out.audio_data) > 0:
                 
-                valid = check_wakeup_word(self.request_cmd)
-                if valid :
-                    index = request_cmd.find('로 가')
-                else :
-                    continue               
+                index = -1
+                isMoving = False
                 
                 if not self.conversation_stream.playing:
                     self.conversation_stream.stop_recording()
-                    self.conversation_stream.start_playback()              
+                    self.conversation_stream.start_playback()
+                    
+                    valid = self.check_wakeup_word(request_cmd)
+                    if valid :
+                        rospy.loginfo("[KKR] : Valid")
+                        index = request_cmd.find('로가')
+                    else :
+                        rospy.loginfo("[KKR] : Invalid")
+                        continue  
                 
-                if index > -1 :
-                   self.pub_move.publish(request_cmd[index - 1])
-                   
-                else :
-                    self.pub_move.publish("GA Request : %s ")
-                    self.conversation_stream.write(resp.audio_out.audio_data)
+                    if index > -1 :
+                        self.pub_move.publish("GA Request" + request_cmd[index - 1])
+                        isMoving = True
+                        rospy.loginfo("[KKR] : request moving")
+                    else :
+                        self.pub_move.publish("GA Request")
+                
+                if isMoving :
+                    rospy.loginfo("[KKR] : speak output")
+                    
+                
+                self.conversation_stream.write(resp.audio_out.audio_data)
                 
 
             if resp.dialog_state_out.conversation_state:
@@ -292,7 +301,7 @@ if __name__ == '__main__':
     #device_id = rospy.get_param("/google_assistant_ros/project_id")
 
     project_id = "turtlebot-ai-speaker"
-    device_id = "turtlebot-ai-speaker-home_pi4-3tsek8"
+    device_id = "turtlebot-ai-speaker-raspi_103-33luii"
 
     #rospy.loginfo("device model id : %s", device_model_id)
     rospy.loginfo("[main] project id : %s" , project_id)
@@ -357,8 +366,12 @@ if __name__ == '__main__':
        
     
     while not rospy.is_shutdown():
-                
-        continue_conversation, request_cmd = ros_assistant.assist()
+
+        try:        
+            continue_conversation, request_cmd = ros_assistant.assist()
+        except KeyboardInterrupt:
+            sys.exit()
+
 
 
         #if once and (not continue_conversation):
