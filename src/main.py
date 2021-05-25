@@ -14,7 +14,7 @@ import logging
 import uuid
 import sys
 reload(sys)
-sys.setdefaultencoding('utf8')
+sys.setdefaultencoding('utf-8')
 
 
 import time
@@ -202,6 +202,8 @@ class RosAssistant(object):
                 
                 index = -1
                 isMoving = False
+                valid = False
+                
                 
                 if not self.conversation_stream.playing:
                     self.conversation_stream.stop_recording()
@@ -213,10 +215,11 @@ class RosAssistant(object):
                         index = request_cmd.find('로가')
                     else :
                         rospy.loginfo("[KKR] : Invalid")
-                        continue  
+                        break  
                 
                     if index > -1 :
-                        self.pub_move.publish("GA Request" + request_cmd[index - 1])
+                        #dst = request_cmd.split(' ')[2].decode('utf-8').encode('cp949')
+                        self.pub_move.publish(request_cmd)
                         isMoving = True
                         rospy.loginfo("[KKR] : request moving")
                     else :
@@ -224,8 +227,7 @@ class RosAssistant(object):
                 
                 if isMoving :
                     rospy.loginfo("[KKR] : speak output")
-                    
-                
+                          
                 self.conversation_stream.write(resp.audio_out.audio_data)
                 
 
