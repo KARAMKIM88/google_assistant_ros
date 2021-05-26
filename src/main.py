@@ -27,7 +27,7 @@ import grpc
 import google.auth.transport.grpc
 import google.auth.transport.requests
 import google.oauth2.credentials
-
+import os # need to sudo apt-get install sox
 
 
 
@@ -117,7 +117,8 @@ class RosAssistant(object):
         self.deadline = DEFAULT_GRPC_DEADLINE
         self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
         self.wakeup_word = "Ok Google"
-        
+        self.duration = 0.1  # seconds
+        self.freq = 440  # Hz
 
         # Create an authorized gRPC channel.
         
@@ -198,6 +199,7 @@ class RosAssistant(object):
                 logging.info('Transcript of user request: "%s".',
                              ' '.join(r.transcript
                                       for r in resp.speech_results))
+
             if len(resp.audio_out.audio_data) > 0:
                 
                 index = -1
@@ -226,9 +228,12 @@ class RosAssistant(object):
                         self.pub_move.publish("GA Request")
                 
                 if isMoving :
-                    rospy.loginfo("[KKR] : speak output")
-                          
-                self.conversation_stream.write(resp.audio_out.audio_data)
+                    os.system('play -nq -t alsa synth {} sine {}'.format(self.duration, self.freq))
+                    rospy.loginfo("[KKR] : Move to Destination")
+                    break
+                    
+                else :
+                    self.conversation_stream.write(resp.audio_out.audio_data)
                 
 
             if resp.dialog_state_out.conversation_state:
